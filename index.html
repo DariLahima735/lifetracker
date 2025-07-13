@@ -1,0 +1,294 @@
+import React, { useState } from 'react';
+import { Plus, Award, BookOpen, Target } from 'lucide-react';
+
+const StudyProgressTracker = () => {
+  const topics = [
+    'Organic Chemistry',
+    'Inorganic Chemistry',
+    'Physical Chemistry',
+    '8th Grade Bio',
+    '9th Grade Bio',
+    '10th Grade Bio',
+    'Camera Angles',
+    'Lighting',
+    'Script Writing',
+    'Creative Vision'
+  ];
+
+  const [progress, setProgress] = useState(() => {
+    const initial = {};
+    topics.forEach(topic => {
+      initial[topic] = 0;
+    });
+    return initial;
+  });
+
+  const [selectedTopic, setSelectedTopic] = useState(topics[0]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const addProgress = (topic) => {
+    setProgress(prev => ({
+      ...prev,
+      [topic]: Math.min(prev[topic] + 1, 10000)
+    }));
+    setShowDropdown(false);
+  };
+
+  const getProgressPercentage = (points) => (points / 10000) * 100;
+
+  const getMasteryLevel = (points) => {
+    if (points >= 10000) return 'Master';
+    if (points >= 7500) return 'Expert';
+    if (points >= 5000) return 'Advanced';
+    if (points >= 2500) return 'Intermediate';
+    if (points >= 1000) return 'Beginner';
+    return 'Novice';
+  };
+
+  const getMasteryColor = (points) => {
+    if (points >= 10000) return 'text-purple-600';
+    if (points >= 7500) return 'text-blue-600';
+    if (points >= 5000) return 'text-green-600';
+    if (points >= 2500) return 'text-yellow-600';
+    if (points >= 1000) return 'text-orange-600';
+    return 'text-gray-600';
+  };
+
+  // Spider web chart calculation
+  const createSpiderChart = () => {
+    const centerX = 200;
+    const centerY = 200;
+    const maxRadius = 160;
+    const angleStep = (2 * Math.PI) / topics.length;
+
+    // Create concentric circles (levels)
+    const levels = [2000, 4000, 6000, 8000, 10000];
+    const levelPaths = levels.map(level => {
+      const radius = (level / 10000) * maxRadius;
+      const points = topics.map((_, i) => {
+        const angle = i * angleStep - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        return `${x},${y}`;
+      });
+      return `M ${points.join(' L ')} Z`;
+    });
+
+    // Create grid lines
+    const gridLines = topics.map((_, i) => {
+      const angle = i * angleStep - Math.PI / 2;
+      const x = centerX + maxRadius * Math.cos(angle);
+      const y = centerY + maxRadius * Math.sin(angle);
+      return `M ${centerX},${centerY} L ${x},${y}`;
+    });
+
+    // Create progress polygon
+    const progressPoints = topics.map((topic, i) => {
+      const angle = i * angleStep - Math.PI / 2;
+      const radius = (progress[topic] / 10000) * maxRadius;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      return `${x},${y}`;
+    });
+    const progressPath = `M ${progressPoints.join(' L ')} Z`;
+
+    // Create labels
+    const labels = topics.map((topic, i) => {
+      const angle = i * angleStep - Math.PI / 2;
+      const labelRadius = maxRadius + 30;
+      const x = centerX + labelRadius * Math.cos(angle);
+      const y = centerY + labelRadius * Math.sin(angle);
+      return { topic, x, y, points: progress[topic] };
+    });
+
+    return { levelPaths, gridLines, progressPath, labels };
+  };
+
+  const { levelPaths, gridLines, progressPath, labels } = createSpiderChart();
+
+  const totalPoints = Object.values(progress).reduce((sum, points) => sum + points, 0);
+  const masteredTopics = Object.values(progress).filter(points => points >= 10000).length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Study Progress Tracker</h1>
+          <p className="text-gray-600">Track your journey to mastery across all subjects</p>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">{totalPoints.toLocaleString()}</div>
+            <div className="text-gray-600">Total Study Points</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">{masteredTopics}</div>
+            <div className="text-gray-600">Mastered Topics</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">{topics.length - masteredTopics}</div>
+            <div className="text-gray-600">Topics in Progress</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Spider Web Chart */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Progress Spider Chart</h2>
+            <div className="flex justify-center">
+              <svg width="400" height="400" className="border rounded-lg">
+                {/* Background circles */}
+                {levelPaths.map((path, i) => (
+                  <path
+                    key={i}
+                    d={path}
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                    opacity="0.5"
+                  />
+                ))}
+                
+                {/* Grid lines */}
+                {gridLines.map((line, i) => (
+                  <path
+                    key={i}
+                    d={line}
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                    opacity="0.5"
+                  />
+                ))}
+                
+                {/* Progress area */}
+                <path
+                  d={progressPath}
+                  fill="url(#progressGradient)"
+                  stroke="#6366f1"
+                  strokeWidth="2"
+                  opacity="0.8"
+                />
+                
+                {/* Progress points */}
+                {labels.map((label, i) => {
+                  const angle = (i * (2 * Math.PI) / topics.length) - Math.PI / 2;
+                  const radius = (label.points / 10000) * 160;
+                  const x = 200 + radius * Math.cos(angle);
+                  const y = 200 + radius * Math.sin(angle);
+                  return (
+                    <circle
+                      key={i}
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill="#6366f1"
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                  );
+                })}
+                
+                {/* Gradient definition */}
+                <defs>
+                  <radialGradient id="progressGradient" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0.1" />
+                  </radialGradient>
+                </defs>
+                
+                {/* Labels */}
+                {labels.map((label, i) => (
+                  <text
+                    key={i}
+                    x={label.x}
+                    y={label.y}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="text-xs font-medium fill-gray-700"
+                  >
+                    {label.topic}
+                  </text>
+                ))}
+              </svg>
+            </div>
+          </div>
+
+          {/* Study Button and Progress List */}
+          <div className="space-y-6">
+            {/* Study Button */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Add Study Progress</h2>
+              <div className="relative">
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition duration-200 flex items-center justify-center gap-2"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  What did you study?
+                </button>
+                
+                {showDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-10 max-h-60 overflow-y-auto">
+                    {topics.map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => addProgress(topic)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition duration-150 flex items-center justify-between border-b border-gray-100 last:border-b-0"
+                      >
+                        <span className="font-medium text-gray-800">{topic}</span>
+                        <span className="text-sm text-gray-500">
+                          {progress[topic]}/10,000
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Progress List */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Subject Progress</h2>
+              <div className="space-y-4">
+                {topics.map((topic) => (
+                  <div key={topic} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-gray-800">{topic}</h3>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${getMasteryColor(progress[topic])}`}>
+                          {getMasteryLevel(progress[topic])}
+                        </span>
+                        {progress[topic] >= 10000 && (
+                          <Award className="w-4 h-4 text-purple-600" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">
+                        {progress[topic].toLocaleString()} / 10,000 points
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {getProgressPercentage(progress[topic]).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${getProgressPercentage(progress[topic])}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default StudyProgressTracker;
