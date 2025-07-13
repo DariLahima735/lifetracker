@@ -224,6 +224,10 @@
                         <!-- Dropdown items will be generated here -->
                     </div>
                     
+                    <div style="margin: 20px 0; padding: 15px; background: #e8f5e8; border-radius: 10px; border-left: 4px solid #4caf50;">
+                        <small style="color: #2e7d32; font-weight: bold;">✅ Your progress is automatically saved!</small>
+                    </div>
+                    
                     <h3 style="font-size: 1.2em; margin-bottom: 15px; color: #333;">Subject Progress</h3>
                     <div id="progressList" class="progress-list">
                         <!-- Progress items will be generated here -->
@@ -248,9 +252,29 @@
         ];
 
         let progress = {};
-        topics.forEach(topic => {
-            progress[topic] = 0;
-        });
+        
+        // Load progress from localStorage or initialize with zeros
+        function loadProgress() {
+            const saved = localStorage.getItem('studyProgress');
+            if (saved) {
+                progress = JSON.parse(saved);
+                // Ensure all topics exist (in case we add new topics later)
+                topics.forEach(topic => {
+                    if (progress[topic] === undefined) {
+                        progress[topic] = 0;
+                    }
+                });
+            } else {
+                topics.forEach(topic => {
+                    progress[topic] = 0;
+                });
+            }
+        }
+        
+        // Save progress to localStorage
+        function saveProgress() {
+            localStorage.setItem('studyProgress', JSON.stringify(progress));
+        }
 
         function toggleDropdown() {
             const dropdown = document.getElementById('dropdown');
@@ -259,6 +283,7 @@
 
         function addProgress(topic) {
             progress[topic] = Math.min(progress[topic] + 1, 10000);
+            saveProgress(); // Save after each update
             updateDisplay();
             toggleDropdown();
         }
@@ -438,6 +463,7 @@
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
+            loadProgress(); // Load saved progress first
             initializeDropdown();
             updateDisplay();
         });
